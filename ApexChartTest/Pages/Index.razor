@@ -1,0 +1,47 @@
+﻿@page "/"
+
+<h3>TestPage</h3>
+
+<MudText>@info</MudText>
+<MudPaper>
+    <ApexCharts.ApexChart TItem="ValuePoint" @ref="graph">
+        <ApexCharts.ApexPointSeries SeriesType="ApexCharts.SeriesType.Line"
+                    TItem="ValuePoint"
+                    Items="Data"
+                    Name="Occupation"
+                    XValue="@(e => e.Position)"
+                    YValue="@(e => e.Value)" />
+    </ApexCharts.ApexChart>
+</MudPaper>
+
+@code {
+    string json;
+    string info = "";
+    List<ValuePoint> Data = new();
+    ApexCharts.ApexChart<ValuePoint> graph;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Timer timer = new Timer();
+
+        var http = new HttpClient() { BaseAddress = new Uri("https://localhost:7170/") };
+        json = await http.GetStringAsync("sample-data/temp.csv");
+
+        List<string> temps = json.Split("\n").Where(x => !string.IsNullOrEmpty(x)).ToList();
+
+        for (int i = 0; i < temps.Count; i++)
+        {
+            double t = double.Parse(temps[i].Replace('.', ','));
+
+            ValuePoint vp = new ValuePoint(i.ToString(), t);
+
+            Data.Add(vp);
+        }
+
+        await Task.Delay(100);
+
+        await graph.UpdateSeriesAsync();
+
+        info = timer.End();
+    }
+}
